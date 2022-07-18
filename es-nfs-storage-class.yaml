@@ -1,0 +1,10 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: es-nfs-storage
+  namespace: logging
+provisioner: es-nfs-provisioner
+allowVolumeExpansion: true
+parameters: 
+  # 資源刪除策略, true表示刪除PVC時同時刪除綁定的PV
+  archiveOnDelete: "true"

@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kibana
+  namespace: logging
+  labels:
+    app: kibana
+spec:
+  ports:
+    # # By default and for convenience, the `targetPort` is set to the same value as the `port` field.
+  - port: 5601
+    targetPort: 5601
+    # Optional field
+    # By default and for convenience, the Kubernetes control plane will allocate a port from a range (default: 30000-32767)
+    nodePort: 30561
+  # 偉了方便測試我們將service設置為NodePort類型
+  type: NodePort
+  selector:
+    app: kibana
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kibana
+  namespace: logging
+  labels:
+    app: kibana
+spec:
+  selector:
+    matchLabels:
+      app: kibana
+  template:
+    metadata:
+      labels:
+        app: kibana
+    spec:
+      # nodeSelector: 看要不要建立額外的nodeSelector標籤專門給log的
+        # es: log
+      containers:
+      - name: kibana
+        image: docker.elastic.co/kibana/kibana:7.6.2
+        resources:
+          limits:
+            cpu: 1000m
+          requests:
+            cpu: 1000m # 這是占用一整顆cpu...自己好好衡量阿
+        env:
+        # 使用以下便量ˇ設置es-cluster的端點直接使用k8s dns即可
+        # 此端點對應svc名稱es-cluster-svc是一個headless service所以該域將解析es pod的ip地址列表
+        - name: ELASTICSEARCH_HOSTS
+          value: http://es-cluster-svc:9200
+        ports:
+        - containerPort: 5601

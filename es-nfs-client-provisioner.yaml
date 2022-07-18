@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nfs-client-provisioner
+  namespace: logging
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: nfs-client-provisioner
+  template:
+    metadata:
+      labels:
+        app: nfs-client-provisioner
+    spec:
+      serviceAccountName: nfs-client-provisioner
+      containers:
+        - name: nfs-client-provisioner
+          image: quay.io/external_storage/nfs-client-provisioner:latest
+          volumeMounts:
+            - name: nfs-client-root
+              mountPath: /persistentvolumes
+          env:
+            # 儲存分配器名稱
+            - name: PROVISIONER_NAME
+              value: es-nfs-provisioner
+            # NFS服務氣地址 設置為自己的IP，對外ip
+            - name: NFS_SERVER
+              value: 34.80.7.234
+            # NFS共享目錄
+            - name: NFS_PATH
+              value: /data/es
+      volumes:
+        - name: nfs-client-root
+          nfs:
+            server: 34.80.7.234 # ，對外ip
+            path: /data/es

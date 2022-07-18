@@ -1,0 +1,11 @@
+# A service account in kubernetes is an entity to provide identity to a pod. 
+# Here, we want to create a service account to be used with fluentd pods.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: fluentd-es
+  namespace: logging
+  labels:
+    k8s-app: fluentd-es
+    kubernetes.io/cluster-service: "true"
+    addonmanager.kubernetes.io/mode: Reconcile

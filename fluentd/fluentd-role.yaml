@@ -1,0 +1,19 @@
+
+# A cluster role in kubernetes contains rules that represent a set of permissions. 
+# For fluentd, we want to give permissions for pods and namespaces.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: fluentd
+  labels:
+    app: fluentd
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch

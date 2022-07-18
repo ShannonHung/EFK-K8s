@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: es-cluster
+  namespace: logging
+spec:
+  serviceName: es-cluster-svc
+  replicas: 3
+  selector:
+    matchLabels:
+      app: elasticsearch
+  template:
+    metadata:
+      labels:
+        app: elasticsearch
+    spec:
+      containers:
+      - name: elasticsearch
+        image: docker.elastic.co/elasticsearch/elasticsearch:7.6.2
+        # 修改權限
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+        # 限制cpu數量
+        resources:
+            limits:
+              cpu: 1000m
+            requests:
+              cpu: 100m
+        ports:
+        - containerPort: 9200
+          name: rest
+          protocol: TCP
+        - containerPort: 9300
+          name: inter-node
+          protocol: TCP
+        # 設置掛載目錄
+        volumeMounts:
+        - name: data
+          mountPath: /usr/share/elasticsearch/data
+        # 設置環境變量
+        env:
+          # 自訂義 clustenr name
+          - name: cluster.name
+            value: k8s-logs
+          # 定義傑點名稱 使用metadata.name名稱
+          - name: node.name
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          # 發現節點的地址, discover.seed_hosts的值應該包含所有master的候選節點
+          - name: discovery.seed_hosts
+            value: "es-cluster-svc"
+          # 初始化時 ES從中選出master節點，對應metadata.name名稱加編號從0開始
+          - name: cluster.initial_master_nodes
+            value: "es-cluster-0,es-cluster-1,es-cluster-2"
+          # 配置內存
+          - name: ES_JAVA_OPTS
+            value: "-Xms512m -Xmx512m"
+      # 初始化容器
+      initContainers:
+      - name: fix-permissions
+        image: busybox
+        command: ["sh", "-c", "chown -R 1000:1000 /usr/share/elasticsearch/data"]
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: data
+          mountPath: /usr/share/elasticsearch/data
+      - name: increase-vm-max-map
+        image: busybox
+        command: ["sysctl", "-w", "vm.max_map_count=262144"]
+        securityContext:
+          privileged: true
+      - name: increase-fd-ulimit
+        image: busybox
+        command: ["sh", "-c", "ulimit -n 65536"]
+        securityContext:
+          privileged: true
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+      labels:
+        app: elasticsearch
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "nfs-client"
+      resources:
+        requests:
+          storage: 5Gi
