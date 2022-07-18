@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    kioxia.share.station/server: kioxia-idp
+  name: kioxia-idp
+  namespace: kioxia
+spec:
+  ports:
+    - port: 8084
+      protocol: TCP
+      targetPort: 8084
+  selector:
+    kioxia.share.station/server: kioxia-idp
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    kioxia.share.station/server: kioxia-pep
+  name: kioxia-pep
+  namespace: kioxia
+spec:
+  ports:
+    - port: 8085
+      protocol: TCP
+      targetPort: 8085
+  selector:
+    kioxia.share.station/server: kioxia-pep
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    kioxia.share.station/server: kioxia-file
+  name: kioxia-file
+  namespace: kioxia
+spec:
+  ports:
+    - port: 8086
+      protocol: TCP
+      targetPort: 8086
+  selector:
+    kioxia.share.station/server: kioxia-file
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    kioxia.share.station/server: kioxia-pdp
+  name: kioxia-pdp
+  namespace: kioxia
+spec:
+  ports:
+    - port: 8087
+      protocol: TCP
+      targetPort: 8087
+  selector:
+    kioxia.share.station/server: kioxia-pdp

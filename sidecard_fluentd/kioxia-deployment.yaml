@@ -1,0 +1,134 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kioxia-idp
+  namespace: kioxia
+spec:
+  selector:
+    matchLabels:
+      kioxia.share.station/server: kioxia-idp
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        kioxia.share.station/server: kioxia-idp
+    spec:
+      containers:
+        - image: 192.168.0.100:30004/dev/kioxia-idp:8be6fe9e
+          lifecycle:
+            preStop:
+              exec:
+                command: [ "sh", "-c", "sleep 10" ]
+          imagePullPolicy: Always
+          name: kioxia-idp
+          ports:
+            - containerPort: 8084
+              protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kioxia-pep
+  namespace: kioxia
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      kioxia.share.station/server: kioxia-pep
+  template:
+    metadata:
+      labels:
+        kioxia.share.station/server: kioxia-pep
+    spec:
+      containers:
+        - name: kioxia-pep
+          image: 192.168.0.100:30004/dev/kioxia-pep:8be6fe9e
+          lifecycle:
+            preStop:
+              exec:
+                command: [ "sh", "-c", "sleep 10" ]
+          imagePullPolicy: Always
+          name: kioxia-pep
+          # 設定想要與同pod container共用的資料夾
+          volumeMounts:
+            - name: accesslog
+              mountPath: /logs/AccessLog/
+          ports:
+          - containerPort: 8085
+            protocol: TCP
+      # This is for FluentD Logging Container
+        - name: fluentd
+          env:
+          - name: FLUENT_UID
+            value: root
+          - name: FLUENT_CONF
+            value: fluent.conf
+          - name: FLUENTD_ARGS
+            value: -c /fluentd/etc/fluent.conf
+          image: fluent/fluentd-kubernetes-daemonset:v1-debian-elasticsearch
+          volumeMounts:
+          - name: accesslog
+            mountPath: /logs/AccessLog/
+          - name:  fdconf
+            mountPath:  /fluentd/etc/
+
+      volumes:
+      - name: accesslog
+        emptyDir: {}
+      - name: fdconf
+        configMap:
+          name: kioxiafluentdconf
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kioxia-pdp
+  namespace: kioxia
+spec:
+  selector:
+    matchLabels:
+      kioxia.share.station/server: kioxia-pdp
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        kioxia.share.station/server: kioxia-pdp
+    spec:
+      containers:
+        - image: 192.168.0.100:30004/dev/kioxia-pdp:8be6fe9e
+          lifecycle:
+            preStop:
+              exec:
+                command: [ "sh", "-c", "sleep 10" ]
+          imagePullPolicy: Always
+          name: kioxia-pdp
+          ports:
+            - containerPort: 8087
+              protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kioxia-file
+  namespace: kioxia
+spec:
+  selector:
+    matchLabels:
+      kioxia.share.station/server: kioxia-file
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        kioxia.share.station/server: kioxia-file
+    spec:
+      containers:
+        - image: 192.168.0.100:30004/dev/kioxia-file:8be6fe9e
+          lifecycle:
+            preStop:
+              exec:
+                command: [ "sh", "-c", "sleep 10" ]
+          imagePullPolicy: Always
+          name: kioxia-file
+          ports:
+            - containerPort: 8086
+              protocol: TCP

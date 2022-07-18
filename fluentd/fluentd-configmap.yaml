@@ -15,7 +15,7 @@ data:
       path /var/log/containers/*.log          # 挂载的服务器Docker容器日志地址
       pos_file /var/log/es-containers.log.pos # we specify a position file that Fluentd uses to bookmark its place within the logs.
       tag raw.kubernetes.*                    # 设置日志标签
-      read_from_head true
+      read_from_head true                     # Starts to read the logs from the head of the file or the last read position recorded in pos_file, not tail.
       <parse>                                 # 多行格式化成JSON
         @type multi_format                    # 使用 multi-format-parser 解析器插件
         <pattern>
