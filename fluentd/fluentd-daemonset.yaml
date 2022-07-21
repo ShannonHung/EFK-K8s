@@ -77,8 +77,6 @@ spec:
         env:
         - name: FLUENTD_ARGS
           value: --no-supervisor -q
-        - name: FLUENT_ELASTICSEARCH_HOST
-          value: 
         resources:
           limits:
             memory: 500Mi

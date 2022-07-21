@@ -48,36 +48,37 @@ spec:
               exec:
                 command: [ "sh", "-c", "sleep 10" ]
           imagePullPolicy: Always
-          name: kioxia-pep
           # 設定想要與同pod container共用的資料夾
           volumeMounts:
-            - name: accesslog
-              mountPath: /logs/AccessLog/
+          - name: accesslog
+            mountPath: /logs/
           ports:
           - containerPort: 8085
             protocol: TCP
       # This is for FluentD Logging Container
-        - name: fluentd
+        - name: fluentd-es
+          image: quay.io/fluentd_elasticsearch/fluentd:v3.0.1
           env:
-          - name: FLUENT_UID
-            value: root
-          - name: FLUENT_CONF
-            value: fluent.conf
           - name: FLUENTD_ARGS
-            value: -c /fluentd/etc/fluent.conf
-          image: fluent/fluentd-kubernetes-daemonset:v1-debian-elasticsearch
+            value: --no-supervisor -q
+          resources:
+            limits:
+              memory: 500Mi
+            requests:
+              cpu: 100m
+              memory: 200Mi
           volumeMounts:
           - name: accesslog
-            mountPath: /logs/AccessLog/
-          - name:  fdconf
-            mountPath:  /fluentd/etc/
+            mountPath: /var/log
+          - name: config-volume
+            mountPath: /etc/fluent/config.d
 
       volumes:
       - name: accesslog
         emptyDir: {}
-      - name: fdconf
+      - name: config-volume
         configMap:
-          name: kioxiafluentdconf
+          name: fluentd-config
 ---
 apiVersion: apps/v1
 kind: Deployment
