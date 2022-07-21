@@ -1,7 +1,13 @@
 # Node Agent Logging Service
 ## 01 設定elasticSearch 
 - https://hackmd.io/@ShannonHung/BJX8R1xnc
+
+> 使用headless service的目的
+原本的dns是為了附載平衡，但是如果使用nslookup只會回傳dns的clusterIP
+因此如果我們使用headless service這樣回傳的就會是三個pod ip
+headless Service 直接指向每個端點，即每個 pod 都有一個 DNS 域名。這樣Pod之間就可以互相訪問，實現Pod間的發現和訪問。
 ```
+# 建立es的namespace, headless service, elasticsearch statefulSet 
 $ kubectl create -f es-ns.yaml
 $ kubectl create -f es-svc.yaml
 $ kubectl create -f es-cluster.yaml
@@ -28,20 +34,19 @@ $ kubectl create -f fluentd-ds.yaml
 ```
 ## 03-2 設定fluentd 困難的方法 有config設置
 - 參考網站: https://www.qikqiak.com/post/install-efk-stack-on-k8s/
-- 還有可以設定相關label在pod上才會收log的機制
+- 可以設定相關label在pod上才會收log的機制
 - 為了能夠靈活控制那些node的log可以收集所以我們有添加nodeSelector屬性
 - 怎麼樣的pod或是node才會被fluentd收集相關的log? 
 
-
 ```
-# 先建立相關 fluentd.config
+# 先建立相關 fluentd.config，我們會設定只有label有logging=true的pod才會通過Filter
 $ kubectl create -f fluentd-configmap.yaml
 
 # 建立cluster role, service account, clusterRoleBinding, DaemonSet 
 $ kubectl create -f fluentd-daemonset.yaml
 ```
 
-
+### 確保node有添加標籤才會架起daemonSet的fluentd pod
 1. node有添加以下標籤 `beta.kubernetes.io/fluentd-ds-ready: "true"`
 ```
 # 請使用以下指令確認node有以下標籤
@@ -57,6 +62,7 @@ $ kubectl label nodes <node-name> beta.kubernetes.io/fluentd-ds-ready=true
 
 ... 
 ```
+### 確保pod有添加logging=true標籤才會通過fluentd filter
 2. pod有添加以下標籤只保留具有`logging=true`标签的Pod日志
 ```
 # 請使用以下指令確認pod有以下標籤
